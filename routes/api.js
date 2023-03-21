@@ -54,7 +54,7 @@ module.exports = function (app) {
     .get(async function (req, res) {
       const bookid = req.params.id;
       try {
-        const book = await Book.findById(bookid);
+        const book = await Book.findById(bookid).select('-commentcount');
         return res.status(200).send(book);
       } catch (error) {
         return res.status(404).send('no book exists');
@@ -78,8 +78,8 @@ module.exports = function (app) {
             $inc: { commentcount: 1 },
           },
           { new: true }
-        );
-        return res.status(200).send(book);
+        ).select('-commentcount');
+        return res.status(200).send(updatedBook);
       } catch (error) {
         console.log(error.message);
         return res.send('no book exists');
