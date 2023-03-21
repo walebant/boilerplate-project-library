@@ -8,6 +8,7 @@
 
 'use strict';
 const Book = require('../models');
+const errors = { BAD_REQUEST: 400, NOT_FOUND: 404, INTERNAL_SERVER: 500 };
 
 module.exports = function (app) {
   app
@@ -23,18 +24,29 @@ module.exports = function (app) {
       }
     })
 
-    .post(function (req, res) {
+    .post(async function (req, res) {
       //response will contain new book object including atleast _id and title
-      let title = req.body.title;
-      const book = new Book({ title });
-      book.save().then(doc => {
-        if (!doc) return res.send();
-        return res.status(200).send({ _id: doc._id, title: doc.title });
-      });
+      const title = req.body.title;
+
+      if (!title) return res.status(400).send('missing required field title');
+
+      try {
+        const book = new Book({ title });
+        const data = await book.save();
+        return res.status(200).send({ _id: data._id, title: data.title });
+      } catch (error) {
+        return res.send(error.message);
+      }
     })
 
-    .delete(function (req, res) {
+    .delete(async function (req, res) {
       //if successful response will be 'complete delete successful'
+      try {
+        await Book.deleteMany();
+        return res.status(200).send('complete delete successful');
+      } catch (error) {
+        return res.send(error.message);
+      }
     });
 
   app
