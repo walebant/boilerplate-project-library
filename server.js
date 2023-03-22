@@ -3,7 +3,7 @@
 const express = require('express');
 const bodyParser = require('body-parser');
 const cors = require('cors');
-const dbConnect = require('./dbConnect');
+const mongoose = require('mongoose');
 require('dotenv').config();
 
 const apiRoutes = require('./routes/api.js');
@@ -27,9 +27,6 @@ app.route('/').get(function (req, res) {
 //For FCC testing purposes
 fccTestingRoutes(app);
 
-// Database Connection
-dbConnect();
-
 //Routing for API
 apiRoutes(app);
 
@@ -38,20 +35,31 @@ app.use(function (req, res, next) {
   res.status(404).type('text').send('Not Found');
 });
 
-//Start our server and tests!
-const listener = app.listen(process.env.PORT || 3000, function () {
-  console.log('Your app is listening on port ' + listener.address().port);
-  if (process.env.NODE_ENV === 'test') {
-    console.log('Running Tests...');
-    setTimeout(function () {
-      try {
-        runner.run();
-      } catch (e) {
-        console.log('Tests are not valid:');
-        console.error(e);
-      }
-    }, 1500);
-  }
+// initiate database connection
+mongoose.connect(process.env.DB);
+const database = mongoose.connection;
+
+database.on('error', error => {
+  console.log(error);
+});
+
+database.once('connected', () => {
+  console.log('Connected to database 🚀');
+  //Start our server and tests!
+  const listener = app.listen(process.env.PORT || 3000, function () {
+    console.log('Your app is listening on port ' + listener.address().port);
+    if (process.env.NODE_ENV === 'test') {
+      console.log('Running Tests...');
+      setTimeout(function () {
+        try {
+          runner.run();
+        } catch (e) {
+          console.log('Tests are not valid:');
+          console.error(e);
+        }
+      }, 1500);
+    }
+  });
 });
 
 module.exports = app; //for unit/functional testing
