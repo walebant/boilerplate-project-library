@@ -8,7 +8,6 @@
 
 'use strict';
 const Book = require('../models');
-const errors = { BAD_REQUEST: 400, NOT_FOUND: 404, INTERNAL_SERVER: 500 };
 
 module.exports = function (app) {
   app
@@ -17,7 +16,7 @@ module.exports = function (app) {
       //response will be array of book objects
       //json res format: [{"_id": bookid, "title": book_title, "commentcount": num_of_comments },...]
       try {
-        const books = await Book.find().select('-comments');
+        const books = await Book.find();
         return res.status(200).send(books);
       } catch (error) {
         return res.send(error.message);
@@ -54,7 +53,7 @@ module.exports = function (app) {
     .get(async function (req, res) {
       const bookid = req.params.id;
       try {
-        const book = await Book.findById(bookid).select('-commentcount');
+        const book = await Book.findById(bookid);
         return res.status(200).send(book);
       } catch (error) {
         return res.status(404).send('no book exists');
@@ -78,10 +77,9 @@ module.exports = function (app) {
             $inc: { commentcount: 1 },
           },
           { new: true }
-        ).select('-commentcount');
+        );
         return res.status(200).send(updatedBook);
       } catch (error) {
-        console.log(error.message);
         return res.send('no book exists');
       }
     })
