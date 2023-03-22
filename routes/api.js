@@ -80,7 +80,7 @@ module.exports = function (app) {
         );
         return res.status(200).send(updatedBook);
       } catch (error) {
-        return res.send('no book exists');
+        return res.status(404).send('no book exists');
       }
     })
 

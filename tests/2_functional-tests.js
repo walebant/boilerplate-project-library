@@ -10,6 +10,7 @@ const chaiHttp = require('chai-http');
 const chai = require('chai');
 const assert = chai.assert;
 const server = require('../server');
+const Book = require('../models');
 
 chai.use(chaiHttp);
 
@@ -52,10 +53,31 @@ suite('Functional Tests', function () {
       'POST /api/books with title => create book object/expect book object',
       function () {
         test('Test POST /api/books with title', function (done) {
+          chai
+            .request(server)
+            .post('/api/books')
+            .send({ title: 'love and light' })
+            .end((err, res) => {
+              assert.equal(res.status, 200);
+              assert.isObject(res.body);
+              assert.property(res.body, '_id');
+              assert.property(res.body, 'title');
+              done();
+            });
           //done();
         });
 
         test('Test POST /api/books with no title given', function (done) {
+          chai
+            .request(server)
+            .post('/api/books')
+            .send({})
+            .end((err, res) => {
+              assert.equal(res.status, 400);
+              assert.isString(res.text);
+              assert.equal(res.text, 'missing required field title');
+              done();
+            });
           //done();
         });
       }
@@ -63,17 +85,54 @@ suite('Functional Tests', function () {
 
     suite('GET /api/books => array of books', function () {
       test('Test GET /api/books', function (done) {
-        //done();
+        chai
+          .request(server)
+          .get('/api/books')
+          .end((err, res) => {
+            assert.equal(res.status, 200);
+            assert.isArray(res.body);
+            assert.isObject(res.body[0]);
+            assert.property(res.body[0], '_id');
+            assert.property(res.body[0], 'title');
+            assert.property(res.body[0], 'commentcount');
+            assert.isNumber(res.body[0].commentcount);
+            assert.property(res.body[0], 'comments');
+            assert.isArray(res.body[0].comments);
+            done();
+          });
       });
     });
 
     suite('GET /api/books/[id] => book object with [id]', function () {
       test('Test GET /api/books/[id] with id not in db', function (done) {
-        //done();
+        chai
+          .request(server)
+          .get('/api/books/nasioe3')
+          .end((err, res) => {
+            assert.equal(res.status, 404);
+            assert.isString(res.text);
+            assert.equal(res.text, 'no book exists');
+            done();
+          });
       });
 
       test('Test GET /api/books/[id] with valid id in db', function (done) {
-        //done();
+        Book.findOne().then(doc => {
+          chai
+            .request(server)
+            .get(`/api/books/${doc._id}`)
+            .end((err, res) => {
+              assert.equal(res.status, 200);
+              assert.isObject(res.body);
+              assert.property(res.body, '_id');
+              assert.property(res.body, 'title');
+              assert.property(res.body, 'commentcount');
+              assert.isNumber(res.body.commentcount);
+              assert.property(res.body, 'comments');
+              assert.isArray(res.body.comments);
+              done();
+            });
+        });
       });
     });
 
@@ -81,26 +140,78 @@ suite('Functional Tests', function () {
       'POST /api/books/[id] => add comment/expect book object with id',
       function () {
         test('Test POST /api/books/[id] with comment', function (done) {
-          //done();
+          Book.findOne().then(doc => {
+            chai
+              .request(server)
+              .post(`/api/books/${doc._id}`)
+              .send({ comment: 'interesting read' })
+              .end((err, res) => {
+                assert.equal(res.status, 200);
+                assert.isObject(res.body);
+                assert.property(res.body, '_id');
+                assert.property(res.body, 'title');
+                assert.property(res.body, 'commentcount');
+                assert.isNumber(res.body.commentcount);
+                assert.property(res.body, 'comments');
+                assert.isArray(res.body.comments);
+                done();
+              });
+          });
         });
 
         test('Test POST /api/books/[id] without comment field', function (done) {
-          //done();
+          chai
+            .request(server)
+            .post(`/api/books/:id`)
+            .send({})
+            .end((err, res) => {
+              assert.equal(res.status, 400);
+              assert.isString(res.text);
+              assert.equal(res.text, 'missing required field comment');
+              done();
+            });
         });
 
         test('Test POST /api/books/[id] with comment, id not in db', function (done) {
-          //done();
+          chai
+            .request(server)
+            .post(`/api/books/:id`)
+            .send({ comment: 'humour filed' })
+            .end((err, res) => {
+              assert.equal(res.status, 404);
+              assert.isString(res.text);
+              assert.equal(res.text, 'no book exists');
+              done();
+            });
         });
       }
     );
 
     suite('DELETE /api/books/[id] => delete book object id', function () {
       test('Test DELETE /api/books/[id] with valid id in db', function (done) {
-        //done();
+        Book.findOne().then(doc => {
+          chai
+            .request(server)
+            .delete(`/api/books/${doc._id}`)
+            .end((err, res) => {
+              assert.equal(res.status, 200);
+              assert.isString(res.text);
+              assert.equal(res.text, 'delete successful');
+              done();
+            });
+        });
       });
 
       test('Test DELETE /api/books/[id] with  id not in db', function (done) {
-        //done();
+        chai
+          .request(server)
+          .delete(`/api/books/103-32`)
+          .end((err, res) => {
+            assert.equal(res.status, 404);
+            assert.isString(res.text);
+            assert.equal(res.text, 'no book exists');
+            done();
+          });
       });
     });
   });
