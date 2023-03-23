@@ -49,6 +49,8 @@ suite('Functional Tests', function () {
    */
 
   suite('Routing tests', function () {
+    let bookId;
+
     suite(
       'POST /api/books with title => create book object/expect book object',
       function () {
@@ -62,6 +64,7 @@ suite('Functional Tests', function () {
               assert.isObject(res.body);
               assert.property(res.body, '_id');
               assert.property(res.body, 'title');
+              bookId = res.body._id;
               done();
             });
         });
@@ -112,10 +115,29 @@ suite('Functional Tests', function () {
       });
 
       test('Test GET /api/books/[id] with valid id in db', function (done) {
-        Book.findOne().then(doc => {
+        chai
+          .request(server)
+          .get(`/api/books/${bookId}`)
+          .end((err, res) => {
+            assert.equal(res.status, 200);
+            assert.isObject(res.body);
+            assert.property(res.body, '_id');
+            assert.property(res.body, 'title');
+            assert.property(res.body, 'comments');
+            assert.isArray(res.body.comments);
+            done();
+          });
+      });
+    });
+
+    suite(
+      'POST /api/books/[id] => add comment/expect book object with id',
+      function () {
+        test('Test POST /api/books/[id] with comment', function (done) {
           chai
             .request(server)
-            .get(`/api/books/${doc._id}`)
+            .post(`/api/books/${bookId}`)
+            .send({ comment: 'interesting read' })
             .end((err, res) => {
               assert.equal(res.status, 200);
               assert.isObject(res.body);
@@ -125,29 +147,6 @@ suite('Functional Tests', function () {
               assert.isArray(res.body.comments);
               done();
             });
-        });
-      });
-    });
-
-    suite(
-      'POST /api/books/[id] => add comment/expect book object with id',
-      function () {
-        test('Test POST /api/books/[id] with comment', function (done) {
-          Book.findOne().then(doc => {
-            chai
-              .request(server)
-              .post(`/api/books/${doc._id}`)
-              .send({ comment: 'interesting read' })
-              .end((err, res) => {
-                assert.equal(res.status, 200);
-                assert.isObject(res.body);
-                assert.property(res.body, '_id');
-                assert.property(res.body, 'title');
-                assert.property(res.body, 'comments');
-                assert.isArray(res.body.comments);
-                done();
-              });
-          });
         });
 
         test('Test POST /api/books/[id] without comment field', function (done) {
@@ -178,17 +177,15 @@ suite('Functional Tests', function () {
 
     suite('DELETE /api/books/[id] => delete book object id', function () {
       test('Test DELETE /api/books/[id] with valid id in db', function (done) {
-        Book.findOne().then(doc => {
-          chai
-            .request(server)
-            .delete(`/api/books/${doc._id}`)
-            .end((err, res) => {
-              assert.equal(res.status, 200);
-              assert.isString(res.text);
-              assert.equal(res.text, 'delete successful');
-              done();
-            });
-        });
+        chai
+          .request(server)
+          .delete(`/api/books/${bookId}`)
+          .end((err, res) => {
+            assert.equal(res.status, 200);
+            assert.isString(res.text);
+            assert.equal(res.text, 'delete successful');
+            done();
+          });
       });
 
       test('Test DELETE /api/books/[id] with  id not in db', function (done) {
