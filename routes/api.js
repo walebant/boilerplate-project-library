@@ -6,16 +6,16 @@
  *
  */
 
-"use strict";
-const Book = require("../models");
+'use strict';
+const Book = require('../models');
 
 module.exports = function (app) {
   app
-    .route("/api/books")
+    .route('/api/books')
     .get(async function (req, res) {
       try {
         const books = await Book.find();
-        const modifiedBooks = books.map((book) => ({
+        const modifiedBooks = books.map(book => ({
           _id: book._id,
           title: book.title,
           commentcount: book.comments.length,
@@ -28,7 +28,7 @@ module.exports = function (app) {
 
     .post(async function (req, res) {
       const title = req.body.title;
-      if (!title) return res.send("missing required field title");
+      if (!title) return res.send('missing required field title');
 
       try {
         const book = new Book({ title });
@@ -42,21 +42,21 @@ module.exports = function (app) {
     .delete(async function (req, res) {
       try {
         await Book.deleteMany();
-        return res.status(200).send("complete delete successful");
+        return res.status(200).send('complete delete successful');
       } catch (error) {
         return res.send(error.message);
       }
     });
 
   app
-    .route("/api/books/:id")
+    .route('/api/books/:id')
     .get(async function (req, res) {
       const bookid = req.params.id;
 
       try {
         const book = await Book.findById(bookid);
         if (!book) {
-          return res.send("no book exists");
+          return res.send('no book exists');
         }
 
         const result = {
@@ -66,7 +66,7 @@ module.exports = function (app) {
         };
         return res.status(200).send(result);
       } catch (error) {
-        return res.status(500).send("no book exists");
+        return res.status(500).send('no book exists');
       }
     })
 
@@ -74,11 +74,8 @@ module.exports = function (app) {
       const bookid = req.params.id;
       const comment = req.body.comment;
       if (!comment) {
-        return res.send("missing required field comment");
+        return res.send('missing required field comment');
       }
-      // if (!bookid) {
-      //   return res.status(400).send("missing required field id");
-      // }
 
       try {
         const updatedBook = await Book.findByIdAndUpdate(
@@ -88,10 +85,10 @@ module.exports = function (app) {
           },
           { new: true }
         );
-        if (!updatedBook) return res.send("no book exists");
+        if (!updatedBook) return res.send('no book exists');
         return res.status(200).send(updatedBook);
       } catch (error) {
-        return res.status(404).send("no book exists");
+        return res.status(404).send('no book exists');
       }
     })
 
@@ -99,11 +96,11 @@ module.exports = function (app) {
       const bookid = req.params.id;
       try {
         const book = await Book.findByIdAndDelete(bookid);
-        if (!book) return res.send("no book exists");
+        if (!book) return res.send('no book exists');
 
-        return res.send("delete successful");
+        return res.send('delete successful');
       } catch (error) {
-        return res.status(404).send("no book exists");
+        return res.status(404).send('no book exists');
       }
 
       // [Error: no book exists]
