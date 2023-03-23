@@ -15,7 +15,12 @@ module.exports = function (app) {
     .get(async function (req, res) {
       try {
         const books = await Book.find();
-        return res.status(200).send(books);
+        const modifiedBooks = books.map((book) => ({
+          _id: book._id,
+          title: book.title,
+          commentcount: book.comments.length,
+        }));
+        return res.status(200).send(modifiedBooks);
       } catch (error) {
         return res.send(error.message);
       }
@@ -49,8 +54,17 @@ module.exports = function (app) {
       const bookid = req.params.id;
 
       try {
-        const book = await Book.findById(bookid).select("_id title comments");
-        return res.status(200).send(book);
+        const book = await Book.findById(bookid);
+        if (!book) {
+          return res.send("no book exists");
+        }
+
+        const result = {
+          _id: book._id,
+          title: book.title,
+          comments: book.comments,
+        };
+        return res.status(200).send(result);
       } catch (error) {
         return res.status(500).send("no book exists");
       }
@@ -60,21 +74,21 @@ module.exports = function (app) {
       const bookid = req.params.id;
       const comment = req.body.comment;
       if (!comment) {
-        return res.status(400).send("missing required field comment");
+        return res.send("missing required field comment");
       }
-      if (!bookid) {
-        return res.status(400).send("missing required field id");
-      }
+      // if (!bookid) {
+      //   return res.status(400).send("missing required field id");
+      // }
 
       try {
         const updatedBook = await Book.findByIdAndUpdate(
           bookid,
           {
             $push: { comments: comment },
-            $inc: { commentcount: 1 },
           },
           { new: true }
-        ).select("_id title comments");
+        );
+        if (!updatedBook) return res.send("no book exists");
         return res.status(200).send(updatedBook);
       } catch (error) {
         return res.status(404).send("no book exists");
@@ -84,10 +98,11 @@ module.exports = function (app) {
     .delete(async function (req, res) {
       const bookid = req.params.id;
       try {
-        await Book.findByIdAndDelete(bookid);
-        return res.status(200).send("delete successful");
+        const book = await Book.findByIdAndDelete(bookid);
+        if (!book) return res.send("no book exists");
+
+        return res.send("delete successful");
       } catch (error) {
-        console.log("delete/:d", error.message);
         return res.status(404).send("no book exists");
       }
 
